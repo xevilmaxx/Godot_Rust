@@ -11,10 +11,12 @@ const VW: u32 = 384;
 const VH: u32 = 216;
 
 pub fn run_gui() -> eframe::Result<()> {
+    // wgpu by default (native viewport, zero CPU readback); set
+    // GODOT_RS_GL=1 to force the glow renderer + readback path instead.
+    let renderer = if std::env::var("GODOT_RS_GL").is_ok() { eframe::Renderer::Glow } else { eframe::Renderer::Wgpu };
     let opts = eframe::NativeOptions {
-        viewport: egui::ViewportBuilder::default()
-            .with_inner_size([1280.0, 800.0])
-            .with_title("godot_rs — editor"),
+        viewport: egui::ViewportBuilder::default().with_inner_size([1280.0, 800.0]).with_title("godot_rs — editor"),
+        renderer,
         ..Default::default()
     };
     eframe::run_native(
@@ -66,6 +68,15 @@ struct Cam2D {
     grid: bool,
 }
 
+/// GPU-resident 3D viewport: renders the scene with the editor window's own
+/// wgpu device into a texture that egui displays directly — no CPU readback.
+struct NativeView {
+    backend: godot_servers::wgpu_backend::WgpuBackend,
+    tex_id: Option<egui::TextureId>,
+    w: u32,
+    h: u32,
+}
+
 struct GuiApp {
     engine: godot_host::Engine,
     vp: godot_core::Rid,
@@ -75,6 +86,7 @@ struct GuiApp {
     log: Vec<String>,
     tex: Option<egui::TextureHandle>,
     tex2d: Option<egui::TextureHandle>,
+    native: Option<NativeView>,
     status: String,
     screen: MainScreen,
     bottom: BottomTab,
@@ -144,9 +156,10 @@ impl GuiApp {
             playing: false,
             selected: Some(mover.0),
             script_text: "node Mover : Node2D {\nprop speed: float = 200.0\nfn _process(dt: float) {\nposition.x += speed * dt\n}\n}\n".into(),
-            log: vec!["godot_rs editor ready — F5 plays, Q/W/E/R switch gizmo".into()],
+            log: vec!["godot_rs editor ready — F5 runs the scene".into()],
             tex: None,
             tex2d: None,
+            native: None,
             status: String::new(),
             screen: MainScreen::Scene3D,
             bottom: BottomTab::Output,
@@ -565,7 +578,61 @@ impl GuiApp {
             .collect()
     }
 
-    fn show_viewport_3d(&mut self, ui: &mut egui::Ui) {
+    /// GPU-resident 3D viewport: renders the scene with the window's own wgpu
+    /// device into a registered texture — zero CPU readback, unlike the
+    /// `show_viewport_tex` fallback used under the glow renderer.
+    /// Returns true when the native path handled display.
+    fn show_viewport_3d_native(&mut self, ui: &mut egui::Ui, frame: &mut eframe::Frame, rect: egui::Rect) -> bool {
+        let rs = match frame.wgpu_render_state() {
+            Some(rs) => rs,
+            None => return false,
+        };
+        let (w, h, clear, quads) = match self.engine.rendering.viewport_quads(self.vp) {
+            Some(q) => q,
+            None => return false,
+        };
+        if self.native.is_none() {
+            let backend = godot_servers::wgpu_backend::WgpuBackend::with_device_queue(
+                rs.device.clone(),
+                rs.queue.clone(),
+                rs.adapter.get_info().name.clone(),
+            );
+            self.native = Some(NativeView { backend, tex_id: None, w: 0, h: 0 });
+            self.log("native wgpu viewport on: ".to_string() + &rs.adapter.get_info().name);
+        }
+        let nv = match self.native.as_mut() {
+            Some(nv) => nv,
+            None => return false,
+        };
+        if nv.tex_id.is_none() || nv.w != w || nv.h != h {
+            if let Some(old) = nv.tex_id.take() {
+                rs.renderer.write().free_texture(&old);
+            }
+            // Allocate the target, then expose it to egui as a native texture.
+            nv.backend.render_quads_native(w, h, [0.0, 0.0, 0.0, 1.0], &[]);
+            match nv.backend.target_view() {
+                Some(view) => {
+                    nv.tex_id = Some(rs.renderer.write().register_native_texture(
+                        &rs.device,
+                        view,
+                        wgpu::FilterMode::Nearest,
+                    ));
+                    nv.w = w;
+                    nv.h = h;
+                }
+                None => return false,
+            }
+        }
+        nv.backend.render_quads_native(w, h, clear, &quads);
+        if let Some(id) = nv.tex_id {
+            ui.put(rect, egui::Image::new(egui::load::SizedTexture::new(id, rect.size())));
+            true
+        } else {
+            false
+        }
+    }
+
+    fn show_viewport_3d(&mut self, ui: &mut egui::Ui, frame: &mut eframe::Frame) {
         ui.horizontal(|ui| {
             ui.checkbox(&mut self.cam3.grid, "Grid");
             ui.checkbox(&mut self.cam3.ortho, "Ortho");
@@ -612,12 +679,20 @@ impl GuiApp {
         }
         let _ = orbit;
         self.sync_3d_camera();
-        self.engine.rendering.render();
-        // Texture.
-        let fb = self.engine.rendering.capture(self.vp).unwrap_or_default();
-        self.show_viewport_tex(ui, Self::fb_to_pixels(&fb), VW as usize, VH as usize, 1.4, true);
-        // Overlay: grid + view cube + selection marker, drawn in screen space.
+        // Texture: native GPU path first, CPU readback fallback (glow renderer).
         let rect = resp.rect;
+        let native_ok = self.show_viewport_3d_native(ui, frame, rect);
+        if !native_ok {
+            self.engine.rendering.render();
+            let fb = self.engine.rendering.capture(self.vp).unwrap_or_default();
+            self.show_viewport_tex(ui, Self::fb_to_pixels(&fb), VW as usize, VH as usize, 1.4, true);
+        }
+        let backend_name: String = if native_ok {
+            self.native.as_ref().map(|nv| nv.backend.adapter_name().to_owned()).unwrap_or_default()
+        } else {
+            "software readback".to_string()
+        };
+        // Overlay: grid + view cube + selection marker, drawn in screen space.
         let to_px = |p: egui::Pos2| p + rect.min.to_vec2();
         if self.cam3.grid {
             let stroke = egui::Stroke::new(1.0, egui::Color32::from_gray(70));
@@ -689,14 +764,14 @@ impl GuiApp {
             }
         }
         ui.label(format!(
-            "draws={} tris={} frames={} cov={:.2} cam yaw={:.1}° pitch={:.1}° d={:.1}",
+            "draws={} tris={} frames={} cam yaw={:.1}° pitch={:.1}° d={:.1} [{}]",
             self.engine.rendering.stats.draw_calls,
             self.engine.rendering.stats.triangles,
             self.engine.rendering.stats.frames,
-            self.engine.rendering.coverage(self.vp).unwrap_or(0.0),
             self.cam3.yaw.to_degrees(),
             self.cam3.pitch.to_degrees(),
-            self.cam3.dist
+            self.cam3.dist,
+            backend_name
         ));
     }
 
@@ -1366,7 +1441,7 @@ impl GuiApp {
         });
     }
 
-    fn show_game_screen(&mut self, ui: &mut egui::Ui) {
+    fn show_game_screen(&mut self, ui: &mut egui::Ui, frame: &mut eframe::Frame) {
         if !self.game_actions {
             for (a, keys) in [("ui_up", &['w', 'W'][..]), ("ui_down", &['s', 'S'][..]), ("ui_left", &['a', 'A'][..]), ("ui_right", &['d', 'D'][..]), ("ui_accept", &[' '][..])] {
                 if !self.engine.input.has_action(a) {
@@ -1401,7 +1476,23 @@ impl GuiApp {
                 ui.label(format!("{}:{}", act, if *down { "▼" } else { "·" }));
             }
         });
-        self.show_viewport_tex(ui, Self::fb_to_pixels(&self.engine.rendering.capture(self.vp).unwrap_or_default()), VW as usize, VH as usize, 1.8, true);
+        let avail = ui.available_size();
+        let (resp, _painter) = ui.allocate_painter(avail, egui::Sense::click());
+        let mut drew_native = false;
+        if frame.wgpu_render_state().is_some() {
+            drew_native = self.show_viewport_3d_native(ui, frame, resp.rect);
+        }
+        if !drew_native {
+            self.engine.rendering.render();
+            self.show_viewport_tex(
+                ui,
+                Self::fb_to_pixels(&self.engine.rendering.capture(self.vp).unwrap_or_default()),
+                VW as usize,
+                VH as usize,
+                1.8,
+                true,
+            );
+        }
         if self.playing {
             ui.ctx().request_repaint();
         }
@@ -1531,7 +1622,7 @@ fn join_dir(dir: &str, name: &str) -> String {
 }
 
 impl eframe::App for GuiApp {
-    fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
+    fn ui(&mut self, ui: &mut egui::Ui, frame: &mut eframe::Frame) {
         self.apply_theme(ui.ctx());
         egui::Panel::top("menu").show(ui, |ui| self.show_menu(ui));
         egui::Panel::top("mainbar").show(ui, |ui| self.show_toolbar(ui));
@@ -1623,13 +1714,13 @@ impl eframe::App for GuiApp {
             }
             MainScreen::Scene3D => {
                 ui.heading("3D");
-                self.show_viewport_3d(ui);
+                self.show_viewport_3d(ui, frame);
                 self.status = format!("audio {:.1}s", self.engine.audio.time);
             }
             MainScreen::Script => self.show_script_screen(ui),
             MainScreen::Game => {
                 ui.heading("Game");
-                self.show_game_screen(ui);
+                self.show_game_screen(ui, frame);
             }
             MainScreen::AssetLib => self.show_assetlib(ui),
         });

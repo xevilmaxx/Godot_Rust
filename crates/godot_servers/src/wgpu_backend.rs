@@ -64,6 +64,12 @@ impl WgpuBackend {
             ..Default::default()
         }))
         .map_err(|e| format!("wgpu device request failed: {e:?}"))?;
+        Ok(Self::with_device_queue(device, queue, adapter_name))
+    }
+
+    /// Build on an existing device/queue (e.g. eframe's, for a native viewport
+    /// with zero CPU readback). The adapter name is informational only.
+    pub fn with_device_queue(device: wgpu::Device, queue: wgpu::Queue, adapter_name: String) -> Self {
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("godot_rs flat"),
             source: wgpu::ShaderSource::Wgsl(SHADER.into()),
@@ -111,11 +117,11 @@ impl WgpuBackend {
             usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
             mapped_at_creation: false,
         });
-        Ok(Self { device, queue, pipeline, vertex_buf, target: None, adapter_name })
+        Self { device, queue, pipeline, vertex_buf, target: None, adapter_name }
     }
 
     pub fn adapter_name(&self) -> &str {
-        &self.adapter_name
+        return self.adapter_name.as_str();
     }
 
     fn ensure_target(&mut self, w: u32, h: u32) {
@@ -130,7 +136,7 @@ impl WgpuBackend {
             sample_count: 1,
             dimension: wgpu::TextureDimension::D2,
             format: wgpu::TextureFormat::Rgba8Unorm,
-            usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::COPY_SRC,
+            usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::COPY_SRC | wgpu::TextureUsages::TEXTURE_BINDING,
             view_formats: &[],
         });
         let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
@@ -142,6 +148,83 @@ impl WgpuBackend {
             mapped_at_creation: false,
         });
         self.target = Some((w, h, texture, view, readback, pitch));
+    }
+
+    /// Current offscreen target size, if allocated.
+    pub fn target_size(&self) -> Option<(u32, u32)> {
+        self.target.as_ref().map(|(w, h, ..)| (*w, *h))
+    }
+
+    /// View of the current offscreen target (GPU-resident; usable as an egui
+    /// native texture with zero CPU readback).
+    pub fn target_view(&self) -> Option<&wgpu::TextureView> {
+        self.target.as_ref().map(|(_, _, _, view, _, _)| view)
+    }
+
+    /// Pack NDC quads as two CCW triangles each. Shared by both render paths.
+    fn pack_quads(quads: &[(f32, f32, f32, f32, [f32; 4])]) -> Vec<u8> {
+        let mut out: Vec<u8> = Vec::with_capacity(quads.len().min(MAX_QUADS) * 6 * VERTEX_BYTES);
+        let push = |out: &mut Vec<u8>, x: f32, y: f32, c: &[f32; 4]| {
+            out.extend_from_slice(&x.to_le_bytes());
+            out.extend_from_slice(&y.to_le_bytes());
+            for v in c {
+                out.extend_from_slice(&v.to_le_bytes());
+            }
+        };
+        for (x0, y0, x1, y1, c) in quads.iter().take(MAX_QUADS) {
+            let c = [c[0].clamp(0.0, 1.0), c[1].clamp(0.0, 1.0), c[2].clamp(0.0, 1.0), c[3].clamp(0.0, 1.0)];
+            push(&mut out, *x0, *y0, &c);
+            push(&mut out, *x1, *y0, &c);
+            push(&mut out, *x1, *y1, &c);
+            push(&mut out, *x0, *y0, &c);
+            push(&mut out, *x1, *y1, &c);
+            push(&mut out, *x0, *y1, &c);
+        }
+        out
+    }
+
+    fn draw_quads(&self, encoder: &mut wgpu::CommandEncoder, view: &wgpu::TextureView, clear: [f64; 4], verts: &[u8]) {
+        let vert_count = (verts.len() / VERTEX_BYTES) as u32;
+        self.queue.write_buffer(&self.vertex_buf, 0, verts);
+        let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+            label: Some("godot_rs pass"),
+            color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+                view,
+                depth_slice: None,
+                resolve_target: None,
+                ops: wgpu::Operations {
+                    load: wgpu::LoadOp::Clear(wgpu::Color { r: clear[0], g: clear[1], b: clear[2], a: clear[3] }),
+                    store: wgpu::StoreOp::Store,
+                },
+            })],
+            depth_stencil_attachment: None,
+            timestamp_writes: None,
+            occlusion_query_set: None,
+            multiview_mask: None,
+        });
+        pass.set_pipeline(&self.pipeline);
+        pass.set_vertex_buffer(0, self.vertex_buf.slice(..verts.len().min(MAX_QUADS * 6 * VERTEX_BYTES) as u64));
+        pass.draw(0..vert_count, 0..1);
+    }
+
+    /// Render NDC-space quads `(x0, y0, x1, y1, rgba)` into the GPU-resident
+    /// target (no readback). The texture behind `target_view()` holds the frame.
+    pub fn render_quads_native(
+        &mut self,
+        w: u32,
+        h: u32,
+        clear: [f64; 4],
+        quads: &[(f32, f32, f32, f32, [f32; 4])],
+    ) {
+        self.ensure_target(w, h);
+        let verts = Self::pack_quads(quads);
+        let mut encoder = self.device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: Some("godot_rs enc") });
+        if let Some((_, _, _, view, _, _)) = &self.target {
+            self.draw_quads(&mut encoder, view, clear, &verts);
+        } else {
+            return;
+        }
+        self.queue.submit(Some(encoder.finish()));
     }
 
     /// Render NDC-space quads `(x0, y0, x1, y1, rgba)` over `clear`, read back pixels.
@@ -157,48 +240,9 @@ impl WgpuBackend {
             return Err("wgpu target missing".into());
         };
         let (tw, th, pitch) = (*tw, *th, *pitch);
-        // Pack quads as two triangles (CCW).
-        let mut verts: Vec<u8> = Vec::with_capacity(quads.len().min(MAX_QUADS) * 6 * VERTEX_BYTES);
-        let push = |out: &mut Vec<u8>, x: f32, y: f32, c: &[f32; 4]| {
-            out.extend_from_slice(&x.to_le_bytes());
-            out.extend_from_slice(&y.to_le_bytes());
-            for v in c {
-                out.extend_from_slice(&v.to_le_bytes());
-            }
-        };
-        for (x0, y0, x1, y1, c) in quads.iter().take(MAX_QUADS) {
-            let c = [c[0].clamp(0.0, 1.0), c[1].clamp(0.0, 1.0), c[2].clamp(0.0, 1.0), c[3].clamp(0.0, 1.0)];
-            push(&mut verts, *x0, *y0, &c);
-            push(&mut verts, *x1, *y0, &c);
-            push(&mut verts, *x1, *y1, &c);
-            push(&mut verts, *x0, *y0, &c);
-            push(&mut verts, *x1, *y1, &c);
-            push(&mut verts, *x0, *y1, &c);
-        }
-        let vert_count = (verts.len() / VERTEX_BYTES) as u32;
-        self.queue.write_buffer(&self.vertex_buf, 0, &verts);
+        let verts = Self::pack_quads(quads);
         let mut encoder = self.device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: Some("godot_rs enc") });
-        {
-            let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-                label: Some("godot_rs pass"),
-                color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                    view,
-                    depth_slice: None,
-                    resolve_target: None,
-                    ops: wgpu::Operations {
-                        load: wgpu::LoadOp::Clear(wgpu::Color { r: clear[0], g: clear[1], b: clear[2], a: clear[3] }),
-                        store: wgpu::StoreOp::Store,
-                    },
-                })],
-                depth_stencil_attachment: None,
-                timestamp_writes: None,
-                occlusion_query_set: None,
-                multiview_mask: None,
-            });
-            pass.set_pipeline(&self.pipeline);
-            pass.set_vertex_buffer(0, self.vertex_buf.slice(..verts.len() as u64));
-            pass.draw(0..vert_count, 0..1);
-        }
+        self.draw_quads(&mut encoder, view, clear, &verts);
         encoder.copy_texture_to_buffer(
             wgpu::TexelCopyTextureInfo {
                 texture,

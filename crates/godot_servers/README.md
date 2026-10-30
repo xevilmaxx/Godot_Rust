@@ -21,10 +21,18 @@ deterministic software rasterizer), `servers/physics_2d/3d` (GodotPhysics model)
 
 ## Depth beyond the skeleton
 
-- **Physics**: SAT box-box narrowphase (axis-aligned bodies), exact capsule
-  segment math + 3-sphere decomposition, static-box obstacles, body–body
-  impulse response with friction, fixed weld joints + hinge ball-sockets,
-  `CharacterBody3D::move_and_slide` (slide, floor/wall detection, snap).
+- **Physics**: full rigid-body rotation (orientation, angular velocity, exact
+  body-space inertia), oriented 15-axis SAT box-box with face-clipped
+  manifolds, exact capsule segment math (+ documented 3-sphere approximation
+  vs boxes), static-box obstacles, body–body impulse response with friction,
+  fixed weld joints (position + relative orientation) + hinge joints
+  (ball-socket + axis alignment), `CharacterBody3D::move_and_slide` (slide,
+  floor/wall detection, snap), `body_set_damping` (linear + angular).
+  Solver uses pre-manifold velocity snapshots (order-independent) with
+  1/N-distributed slop correction. **Known limits (see
+  `docs/PHYSICS_3D.md`)**: centered stacks settle flat; offset loads and
+  tilted drops can freeze in edge/corner balances; zero-damping spin persists
+  by design; 9/11 physics3d tests green, 2 edge cases tracked as failing.
 - **Rendering**: `RenderBackendKind::Wgpu` renders offscreen to texture and
   reads pixels back into the same framebuffers the software path and GUI
   viewport display (`cargo test -p godot_servers --features wgpu`, verified on

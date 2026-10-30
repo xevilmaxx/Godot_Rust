@@ -11,7 +11,7 @@ glTF .glb/external-.bin, PNG/JPEG, OGG, TCP transport, GDScript transpiler)**.
 |---|--------------|------------|--------|
 | 01 | `core/variant/*`, `core/object/*`, `core/math/*`, `core/string/*`, `core/templates/*`, `core/error/*` | `godot_core` | ✅ COMPLETE — 19 tests |
 | 02 | `scene/main/*`, `scene/2d`, `scene/3d`, `scene/resources/packed_scene` | `godot_scene` | ✅ COMPLETE — 15 tests |
-| 03 | `servers/rendering/*`, `servers/physics_2d/3d`, `servers/audio/*` | `godot_servers` | ✅ COMPLETE + DEEP — SAT box-box, exact capsules, fixed/hinge joints, CharacterBody3D, wgpu offscreen backend (verified on WARP) |
+| 03 | `servers/rendering/*`, `servers/physics_2d/3d`, `servers/audio/*` | `godot_servers` | ✅ COMPLETE + DEEP — rotational dynamics (orientation/angular velocity/exact inertia), oriented 15-axis SAT manifolds, Jacobi-snapshot order-independent solver, fixed/hinge joints, CharacterBody3D, `body_set_damping`, wgpu offscreen backend (verified on WARP). Physics status + 2 known-failing edge tests tracked in `docs/PHYSICS_3D.md` |
 | 04 | `core/io`, `core/os`, `platform/*` (headless), `main/*` | `godot_host` | ✅ COMPLETE — 6 tests (winit/wgpu windowing = 04b) |
 | 05 | `scene/resources`, `scene/animation`, `scene/gui`, `scene/theme` | `godot_scene_ext` | ✅ COMPLETE — 6 tests |
 | 06 | `modules/gdscript` + `modules/mono` → **replaced by Iris v1** | `godot_script_iris` | ✅ COMPLETE — GDScript→Iris transpiler + `docs/GDSCRIPT_COVERAGE.md` (subset transpiles 1:1; coroutines/`$`-refs/`match` bindings rejected with reasons) |
@@ -19,7 +19,7 @@ glTF .glb/external-.bin, PNG/JPEG, OGG, TCP transport, GDScript transpiler)**.
 | 08 | `modules/multiplayer`, `modules/websocket`, `webrtc`, `upnp` | `godot_net` | ✅ COMPLETE + TCP transport (length-prefixed loopback-tested sockets) |
 | 09 | `servers/navigation_*`, `modules/navigation_*` | `godot_nav` | ✅ COMPLETE + nav baking (AABB rasterization, glTF-triangle waypoint graphs) |
 | 10 | `modules/gltf`, codecs, `servers/text` | `godot_io` | ✅ COMPLETE + DEEP — `.glb` containers, external `.bin`, PNG/JPEG (`image`), OGG Vorbis (`lewton`), rustybuzz shaping + fontdb discovery |
-| 11 | `tests/` (GUT + doctest) → `cargo test` per crate | — | ✅ workspace-wide, all green (incl. `--features gui`, `--features godot_servers/wgpu`) |
+| 11 | `tests/` (GUT + doctest) → `cargo test` per crate | — | ✅ workspace-wide green except 2 known physics3d edge-case failures (offset stack + tilted drop freeze in edge/corner balance; see `docs/PHYSICS_3D.md`) (incl. `--features gui`, `--features godot_servers/wgpu`) |
 | 12 | `doc/classes/*.xml` → `editor doc` + ClassDB JSON + READMEs | docs + `*/README.md` | ✅ `docs/api/` + per-module READMEs + global README + `docs/GDSCRIPT_COVERAGE.md` |
 
 ## AI-ready instruments (SolidCraft/ArtCraft pattern)

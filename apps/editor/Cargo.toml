@@ -21,8 +21,9 @@ godot_io.workspace = true
 godot_ai.workspace = true
 tokio.workspace = true
 serde_json.workspace = true
-eframe = { version = "0.36", optional = true, default-features = false, features = ["glow", "default_fonts"] }
+eframe = { version = "0.36", optional = true, default-features = false, features = ["glow", "wgpu", "default_fonts"] }
+wgpu = { version = "30", optional = true }
 
 [features]
 default = []
-gui = ["eframe"]
+gui = ["eframe", "dep:wgpu", "godot_servers/wgpu"]

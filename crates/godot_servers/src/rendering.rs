@@ -459,89 +459,119 @@ impl RenderingServer {
     }
 
     // -------------------------------------------------------------- render -
+    /// Pixel-space draw list for one viewport: background, shaded rects,
+    /// draw/cull/triangle counters. Single source of truth for the software
+    /// rasterizer, the wgpu offscreen path, and the GUI native viewport.
+    fn gather_viewport(&self, vp_id: Rid) -> Option<Gathered> {
+        let light = self.lights.rids().first().and_then(|r| self.lights.get(*r).copied());
+        let (w, h, clear, cam, env) = {
+            let v = self.viewports.get(vp_id)?;
+            let cam = v.camera.and_then(|c| self.cameras.get(c).copied());
+            let env = v.environment.and_then(|e| self.environments.get(e).copied());
+            (v.width, v.height, v.clear_color, cam, env)
+        };
+        let bg = env.map(|e| e.background).unwrap_or(clear);
+        let ambient = env.map(|e| e.ambient * e.ambient_energy).unwrap_or(Color::rgb(0.2, 0.2, 0.2));
+        let proj = cam.map(|c| {
+            let aspect = w as f32 / h.max(1) as f32;
+            match c.ortho_size {
+                Some(s) => Projection::create_orthogonal(-s * aspect, s * aspect, -s, s, c.near, c.far),
+                None => Projection::create_perspective(c.fov_y_deg.to_radians(), aspect, c.near, c.far),
+            }
+        });
+        let view = cam.map(|c| c.transform.affine_inverse());
+        let mut items = vec![];
+        let mut draws = 0u64;
+        let mut culled = 0u64;
+        let mut tris = 0u64;
+        for inst_id in self.instances.rids() {
+            let Some(inst) = self.instances.get(inst_id) else { continue };
+            if !inst.visible {
+                continue;
+            }
+            let Some(mesh_id) = inst.mesh else { continue };
+            let Some(mesh) = self.meshes.get(mesh_id) else { continue };
+            let mat = inst.material.and_then(|m| self.materials.get(m).copied()).unwrap_or(Material {
+                albedo: Color::WHITE,
+                ..Default::default()
+            });
+            // World-space AABB corners.
+            let corners = aabb_corners(mesh.aabb);
+            let world: Vec<Vector3> = corners.iter().map(|p| inst.transform.xform(*p)).collect();
+            // Cull: center behind camera.
+            if let Some(v) = view {
+                let center = world.iter().fold(Vector3::ZERO, |a, b| a + *b) / world.len() as f32;
+                let in_view = v.xform(center);
+                if in_view.z > -0.01 {
+                    culled += 1;
+                    continue;
+                }
+            }
+            // Project to pixels.
+            let rect = if let (Some(p), Some(v)) = (proj.clone(), view) {
+                project_rect(&world, &v, &p, w, h)
+            } else {
+                // No camera: draw centered at 50% size.
+                let (fw, fh) = (w as f32 * 0.25, h as f32 * 0.25);
+                (w as f32 * 0.5 - fw, h as f32 * 0.5 - fh, fw * 2.0, fh * 2.0)
+            };
+            // Shade: albedo × (ambient + key*energy), clamped.
+            let key = light.map(|l| l.color * l.energy).unwrap_or(Color::WHITE * 0.0);
+            let shade = Color {
+                r: (mat.albedo.r * (ambient.r + key.r)).clamp(0.0, 1.0),
+                g: (mat.albedo.g * (ambient.g + key.g)).clamp(0.0, 1.0),
+                b: (mat.albedo.b * (ambient.b + key.b)).clamp(0.0, 1.0),
+                a: 1.0,
+            };
+            items.push((rect, shade));
+            draws += 1;
+            tris += mesh.indices.len().max(mesh.vertices.len()).max(3) as u64 / 3;
+        }
+        Some(Gathered { w, h, bg, items, draws, culled, tris })
+    }
+
+    /// NDC quads + clear color for one viewport, for GPU-native presentation
+    /// (no CPU readback). `None` when the viewport does not exist.
+    pub fn viewport_quads(&self, vp: Rid) -> Option<(u32, u32, [f64; 4], Vec<(f32, f32, f32, f32, [f32; 4])>)> {
+        let g = self.gather_viewport(vp)?;
+        let clear = [g.bg.r as f64, g.bg.g as f64, g.bg.b as f64, 1.0];
+        let quads = g
+            .items
+            .iter()
+            .map(|&((x, y, rw, rh), c)| {
+                (
+                    x / g.w as f32 * 2.0 - 1.0,
+                    1.0 - y / g.h as f32 * 2.0,
+                    (x + rw) / g.w as f32 * 2.0 - 1.0,
+                    1.0 - (y + rh) / g.h as f32 * 2.0,
+                    [c.r, c.g, c.b, c.a],
+                )
+            })
+            .collect();
+        Some((g.w, g.h, clear, quads))
+    }
+
     /// Software render: clear every viewport, then draw each visible instance
     /// as its projected mesh-AABB rect shaded by albedo × (ambient + key light).
-    /// Deterministic, headless, and sufficient to verify scene→pixels plumbing;
-    /// real rasterization/ray-tracing arrives with the wgpu device (module 04).
+    /// Deterministic, headless, and sufficient to verify scene→pixels plumbing.
     pub fn render(&mut self) {
         #[cfg(feature = "wgpu")]
         if self.backend == RenderBackendKind::Wgpu {
             self.render_wgpu();
             return;
         }
-        let light = self.lights.rids().first().and_then(|r| self.lights.get(*r).copied());
-        let vp_ids = self.viewports.rids();
-        for vp_id in vp_ids {
-            // Snapshot viewport + camera + environment (borrow dance).
-            let (w, h, clear, cam, env) = {
-                let Some(v) = self.viewports.get(vp_id) else { continue };
-                let cam = v.camera.and_then(|c| self.cameras.get(c).copied());
-                let env = v.environment.and_then(|e| self.environments.get(e).copied());
-                (v.width, v.height, v.clear_color, cam, env)
-            };
-            let bg = env.map(|e| e.background).unwrap_or(clear);
-            let ambient = env.map(|e| e.ambient * e.ambient_energy).unwrap_or(Color::rgb(0.2, 0.2, 0.2));
-            let proj = cam.map(|c| {
-                let aspect = w as f32 / h.max(1) as f32;
-                match c.ortho_size {
-                    Some(s) => Projection::create_orthogonal(-s * aspect, s * aspect, -s, s, c.near, c.far),
-                    None => Projection::create_perspective(c.fov_y_deg.to_radians(), aspect, c.near, c.far),
-                }
-            });
-            let view = cam.map(|c| c.transform.affine_inverse());
-            let mut fb = vec![bg; (w * h) as usize];
-            let mut draws = 0u64;
-            let mut culled = 0u64;
-            let mut tris = 0u64;
-            for inst_id in self.instances.rids() {
-                let Some(inst) = self.instances.get(inst_id) else { continue };
-                if !inst.visible {
-                    continue;
-                }
-                let Some(mesh_id) = inst.mesh else { continue };
-                let Some(mesh) = self.meshes.get(mesh_id) else { continue };
-                let mat = inst.material.and_then(|m| self.materials.get(m).copied()).unwrap_or(Material {
-                    albedo: Color::WHITE,
-                    ..Default::default()
-                });
-                // World-space AABB corners.
-                let corners = aabb_corners(mesh.aabb);
-                let world: Vec<Vector3> = corners.iter().map(|p| inst.transform.xform(*p)).collect();
-                // Cull: center behind camera.
-                if let Some(v) = view {
-                    let center = world.iter().fold(Vector3::ZERO, |a, b| a + *b) / world.len() as f32;
-                    let in_view = v.xform(center);
-                    if in_view.z > -0.01 {
-                        culled += 1;
-                        continue;
-                    }
-                }
-                // Project to pixels.
-                let rect = if let (Some(p), Some(v)) = (proj.clone(), view) {
-                    project_rect(&world, &v, &p, w, h)
-                } else {
-                    // No camera: draw centered at 50% size.
-                    let (fw, fh) = (w as f32 * 0.25, h as f32 * 0.25);
-                    (w as f32 * 0.5 - fw, h as f32 * 0.5 - fh, fw * 2.0, fh * 2.0)
-                };
-                // Shade: albedo × (ambient + key*energy), clamped.
-                let key = light.map(|l| l.color * l.energy).unwrap_or(Color::WHITE * 0.0);
-                let shade = Color {
-                    r: (mat.albedo.r * (ambient.r + key.r)).clamp(0.0, 1.0),
-                    g: (mat.albedo.g * (ambient.g + key.g)).clamp(0.0, 1.0),
-                    b: (mat.albedo.b * (ambient.b + key.b)).clamp(0.0, 1.0),
-                    a: 1.0,
-                };
-                fill_rect(&mut fb, w, h, rect, shade);
-                draws += 1;
-                tris += mesh.indices.len().max(mesh.vertices.len()).max(3) as u64 / 3;
+        for vp_id in self.viewports.rids() {
+            let Some(g) = self.gather_viewport(vp_id) else { continue };
+            let mut fb = vec![g.bg; (g.w * g.h) as usize];
+            for (rect, shade) in &g.items {
+                fill_rect(&mut fb, g.w, g.h, *rect, *shade);
             }
             if let Some(v) = self.viewports.get_mut(vp_id) {
                 v.framebuffer = fb;
             }
-            self.stats.draw_calls += draws;
-            self.stats.culled += culled;
-            self.stats.triangles += tris;
+            self.stats.draw_calls += g.draws;
+            self.stats.culled += g.culled;
+            self.stats.triangles += g.tris;
             self.stats.frames += 1;
         }
     }
@@ -550,93 +580,52 @@ impl RenderingServer {
     /// wgpu into an offscreen texture, read back into the framebuffers.
     #[cfg(feature = "wgpu")]
     fn render_wgpu(&mut self) {
-        let light = self.lights.rids().first().and_then(|r| self.lights.get(*r).copied());
-        let vp_ids = self.viewports.rids();
-        for vp_id in vp_ids {
-            let (w, h, clear, cam, env) = {
-                let Some(v) = self.viewports.get(vp_id) else { continue };
-                let cam = v.camera.and_then(|c| self.cameras.get(c).copied());
-                let env = v.environment.and_then(|e| self.environments.get(e).copied());
-                (v.width, v.height, v.clear_color, cam, env)
-            };
-            let bg = env.map(|e| e.background).unwrap_or(clear);
-            let ambient = env.map(|e| e.ambient * e.ambient_energy).unwrap_or(Color::rgb(0.2, 0.2, 0.2));
-            let proj = cam.map(|c| match c.ortho_size {
-                Some(s) => {
-                    let aspect = w as f32 / h.max(1) as f32;
-                    Projection::create_orthogonal(-s * aspect, s * aspect, -s, s, c.near, c.far)
-                }
-                None => {
-                    let aspect = w as f32 / h.max(1) as f32;
-                    Projection::create_perspective(c.fov_y_deg.to_radians(), aspect, c.near, c.far)
-                }
-            });
-            let view = cam.map(|c| c.transform.affine_inverse());
-            let mut quads: Vec<(f32, f32, f32, f32, [f32; 4])> = vec![];
-            let mut culled = 0u64;
-            let mut tris = 0u64;
-            for inst_id in self.instances.rids() {
-                let Some(inst) = self.instances.get(inst_id) else { continue };
-                if !inst.visible {
-                    continue;
-                }
-                let Some(mesh_id) = inst.mesh else { continue };
-                let Some(mesh) = self.meshes.get(mesh_id) else { continue };
-                let mat = inst.material.and_then(|m| self.materials.get(m).copied()).unwrap_or(Material {
-                    albedo: Color::WHITE,
-                    ..Default::default()
-                });
-                let corners = aabb_corners(mesh.aabb);
-                let world: Vec<Vector3> = corners.iter().map(|p| inst.transform.xform(*p)).collect();
-                if let Some(v) = view {
-                    let center = world.iter().fold(Vector3::ZERO, |a, b| a + *b) / world.len() as f32;
-                    if v.xform(center).z > -0.01 {
-                        culled += 1;
-                        continue;
-                    }
-                }
-                let rect = if let (Some(p), Some(v)) = (proj.clone(), view) {
-                    project_rect(&world, &v, &p, w, h)
-                } else {
-                    let (fw, fh) = (w as f32 * 0.25, h as f32 * 0.25);
-                    (w as f32 * 0.5 - fw, h as f32 * 0.5 - fh, fw * 2.0, fh * 2.0)
-                };
-                let key = light.map(|l| l.color * l.energy).unwrap_or(Color::WHITE * 0.0);
-                let shade = [
-                    (mat.albedo.r * (ambient.r + key.r)).clamp(0.0, 1.0),
-                    (mat.albedo.g * (ambient.g + key.g)).clamp(0.0, 1.0),
-                    (mat.albedo.b * (ambient.b + key.b)).clamp(0.0, 1.0),
-                    1.0,
-                ];
-                // Pixel rect -> NDC (y flip: pixel y-down to NDC y-up).
-                let (x, y, rw, rh) = rect;
-                quads.push((
-                    x / w as f32 * 2.0 - 1.0,
-                    1.0 - y / h as f32 * 2.0,
-                    (x + rw) / w as f32 * 2.0 - 1.0,
-                    1.0 - (y + rh) / h as f32 * 2.0,
-                    shade,
-                ));
-                tris += mesh.indices.len().max(mesh.vertices.len()).max(3) as u64 / 3;
-            }
-            let clear = [bg.r as f64, bg.g as f64, bg.b as f64, 1.0];
+        for vp_id in self.viewports.rids() {
+            let Some(g) = self.gather_viewport(vp_id) else { continue };
+            let clear = [g.bg.r as f64, g.bg.g as f64, g.bg.b as f64, 1.0];
+            let quads: Vec<(f32, f32, f32, f32, [f32; 4])> = g
+                .items
+                .iter()
+                .map(|&((x, y, rw, rh), c)| {
+                    (
+                        x / g.w as f32 * 2.0 - 1.0,
+                        1.0 - y / g.h as f32 * 2.0,
+                        (x + rw) / g.w as f32 * 2.0 - 1.0,
+                        1.0 - (y + rh) / g.h as f32 * 2.0,
+                        [c.r, c.g, c.b, c.a],
+                    )
+                })
+                .collect();
             let draws = quads.len() as u64;
             let fb = match self.gpu.as_mut() {
-                Some(gpu) => gpu.render_quads(w, h, clear, &quads).unwrap_or_else(|_| {
+                Some(gpu) => gpu.render_quads(g.w, g.h, clear, &quads).unwrap_or_else(|_| {
                     // GPU failure mid-frame: fall back to a clear-color frame, keep stats honest.
-                    vec![bg; (w * h) as usize]
+                    vec![g.bg; (g.w * g.h) as usize]
                 }),
-                None => vec![bg; (w * h) as usize],
+                None => vec![g.bg; (g.w * g.h) as usize],
             };
             if let Some(v) = self.viewports.get_mut(vp_id) {
                 v.framebuffer = fb;
             }
             self.stats.draw_calls += draws;
-            self.stats.culled += culled;
-            self.stats.triangles += tris;
+            self.stats.culled += g.culled;
+            self.stats.triangles += g.tris;
             self.stats.frames += 1;
         }
     }
+}
+
+/// One viewport's frame, pre-rasterization: background, shaded pixel-space
+/// rects, and counters. Shared by all three render paths.
+#[derive(Debug, Clone)]
+struct Gathered {
+    w: u32,
+    h: u32,
+    bg: Color,
+    items: Vec<((f32, f32, f32, f32), Color)>,
+    draws: u64,
+    culled: u64,
+    tris: u64,
 }
 
 impl Default for RenderingServer {
