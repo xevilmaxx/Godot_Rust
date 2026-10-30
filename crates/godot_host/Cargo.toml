@@ -1,0 +1,15 @@
+[package]
+name = "godot_host"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Godot 4.7 core/io+os+platform+main port: VFS, OS, Time, Input, Settings, Display, MainLoop"
+
+[dependencies]
+godot_core.workspace = true
+godot_scene.workspace = true
+godot_servers.workspace = true
+godot_script_iris.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true

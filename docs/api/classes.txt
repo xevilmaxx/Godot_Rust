@@ -1,0 +1,32 @@
+Animation (visible: bool) — play() -> Nil
+AnimationPlayer (visible: bool) — play() -> Nil
+AudioServer (backend: String) — play() -> Nil; render_pcm() -> Nil; encode_wav() -> Nil
+AudioStreamPlayer (visible: bool) — play() -> Nil
+AudioStreamWAV (format: String) — load(path: String) -> int
+Button (visible: bool) — play() -> Nil
+Control (visible: bool) — play() -> Nil
+DisplayServer (headless: bool) — get_ticks_msec() -> int
+Engine (headless: bool) — get_ticks_msec() -> int
+GLTFDocument (format: String) — load(path: String) -> int
+Input (headless: bool) — get_ticks_msec() -> int
+Label (visible: bool) — play() -> Nil
+LineEdit (visible: bool) — play() -> Nil
+MultiplayerAPI (connected: bool) — rpc(method: String) -> Nil
+NavigationServer2D (active: bool) — map_get_path(from: Vector3, to: Vector3) -> PackedVector3Array
+NavigationServer3D (active: bool) — map_get_path(from: Vector3, to: Vector3) -> PackedVector3Array
+Node (name: String, unique_name_in_owner: bool) — add_child(node: Object) -> Nil; get_node(path: NodePath) -> Object; queue_free() -> Nil
+Node2D (position: Vector2, rotation: float, scale: Vector2) 
+Node3D (position: Vector3, rotation: Vector3, scale: Vector3) — look_at(target: Vector3) -> Nil
+OS (headless: bool) — get_ticks_msec() -> int
+Object — _init() -> Nil; get_class() -> String; is_class(class: String) -> bool; set(property: String, value: Nil) -> Nil; get(property: String) -> Nil; connect(signal: Signal, callable: Callable) -> int; emit_signal(signal: Signal) -> Nil; add_to_group(group: String) -> Nil
+PhysicsServer2D (backend: String) — space_create() -> Nil; body_create() -> Nil; space_step() -> Nil
+PhysicsServer3D (backend: String) — space_create() -> Nil; body_create() -> Nil; space_step() -> Nil; ray_cast() -> Nil
+ProjectSettings (headless: bool) — get_ticks_msec() -> int
+RefCounted — reference() -> bool; unreference() -> bool; get_reference_count() -> int
+RenderingServer (backend: String) — texture_create() -> Nil; mesh_create() -> Nil; instance_create() -> Nil; render() -> Nil
+SceneTree (paused: bool, time_scale: float) — create_timer(wait: float) -> Object; get_nodes_in_group(group: String) -> Array
+TextServer (format: String) — load(path: String) -> int
+Theme (visible: bool) — play() -> Nil
+Time (headless: bool) — get_ticks_msec() -> int
+UPNP (connected: bool) — rpc(method: String) -> Nil
+WebSocketPeer (connected: bool) — rpc(method: String) -> Nil

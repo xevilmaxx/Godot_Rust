@@ -1,0 +1,12 @@
+[package]
+name = "godot_net"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Godot 4.7 multiplayer/net port: peers, RPC dispatch, WebSocket channels, UPnP stub"
+
+[dependencies]
+godot_core.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true

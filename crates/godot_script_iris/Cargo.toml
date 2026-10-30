@@ -1,0 +1,12 @@
+[package]
+name = "godot_script_iris"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Iris scripting language - AI-native replacement for GDScript/C# (see docs/IRIS_SPEC.md)"
+
+[dependencies]
+godot_core.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true

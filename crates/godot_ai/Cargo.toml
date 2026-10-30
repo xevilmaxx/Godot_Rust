@@ -1,0 +1,18 @@
+[package]
+name = "godot_ai"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "ACP client + OpenAI-compatible endpoint + MCP server skeleton (SolidCraft-style)"
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+tokio.workspace = true
+godot_core.workspace = true
+godot_scene.workspace = true
+godot_servers.workspace = true
+godot_nav.workspace = true
+godot_io.workspace = true
+godot_script_iris.workspace = true

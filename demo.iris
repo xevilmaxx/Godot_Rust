@@ -1,0 +1,11 @@
+node Demo : Node2D {
+prop speed: float = 200.0
+prop title: str = "hello"
+fn _ready() {
+print title
+}
+fn _process(dt: float) {
+let step = 200.0
+print step
+}
+}

@@ -1,0 +1,222 @@
+[
+  {
+    "name": "list_commands",
+    "description": "List engine commands and their arguments.",
+    "input_schema": {
+      "properties": {},
+      "type": "object"
+    }
+  },
+  {
+    "name": "execute",
+    "description": "Run an engine command (add_node, set_prop, …).",
+    "input_schema": {
+      "properties": {
+        "args": {
+          "type": "object"
+        },
+        "command": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "command"
+      ],
+      "type": "object"
+    }
+  },
+  {
+    "name": "inspect",
+    "description": "Return ClassDB JSON + scene summary.",
+    "input_schema": {
+      "properties": {},
+      "type": "object"
+    }
+  },
+  {
+    "name": "set_parameter",
+    "description": "Set a node property by id.",
+    "input_schema": {
+      "properties": {
+        "node": {
+          "type": "integer"
+        },
+        "property": {
+          "type": "string"
+        },
+        "value": {}
+      },
+      "required": [
+        "node",
+        "property",
+        "value"
+      ],
+      "type": "object"
+    }
+  },
+  {
+    "name": "export",
+    "description": "Export scene JSON or mixed WAV audio.",
+    "input_schema": {
+      "properties": {
+        "format": {
+          "enum": [
+            "json",
+            "wav"
+          ],
+          "type": "string"
+        }
+      },
+      "type": "object"
+    }
+  },
+  {
+    "name": "render",
+    "description": "Render all viewports (software) and return draw stats.",
+    "input_schema": {
+      "properties": {},
+      "type": "object"
+    }
+  },
+  {
+    "name": "render_demo",
+    "description": "Build a demo viewport+box, render it, return pixel coverage.",
+    "input_schema": {
+      "properties": {},
+      "type": "object"
+    }
+  },
+  {
+    "name": "physics3d_step",
+    "description": "Create a falling-ball space if needed, step it, return height+contacts.",
+    "input_schema": {
+      "properties": {
+        "dt": {
+          "type": "number"
+        },
+        "steps": {
+          "type": "integer"
+        }
+      },
+      "type": "object"
+    }
+  },
+  {
+    "name": "physics2d_step",
+    "description": "Create a falling-circle space if needed, step it, return height+contacts.",
+    "input_schema": {
+      "properties": {
+        "dt": {
+          "type": "number"
+        },
+        "steps": {
+          "type": "integer"
+        }
+      },
+      "type": "object"
+    }
+  },
+  {
+    "name": "audio_sine",
+    "description": "Mix a sine tone and return sample count, zero crossings, WAV bytes.",
+    "input_schema": {
+      "properties": {
+        "freq": {
+          "type": "number"
+        },
+        "seconds": {
+          "type": "number"
+        }
+      },
+      "type": "object"
+    }
+  },
+  {
+    "name": "iris_doc",
+    "description": "Parse Iris source and return its machine-readable schema (props/fns/grammar).",
+    "input_schema": {
+      "properties": {
+        "source": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "source"
+      ],
+      "type": "object"
+    }
+  },
+  {
+    "name": "nav_path",
+    "description": "2D grid A* demo: wall with gap, return waypoint count and length.",
+    "input_schema": {
+      "properties": {
+        "height": {
+          "type": "integer"
+        },
+        "width": {
+          "type": "integer"
+        }
+      },
+      "type": "object"
+    }
+  },
+  {
+    "name": "render_gpu",
+    "description": "Render the demo scene with the wgpu backend; needs godot_servers/wgpu.",
+    "input_schema": {
+      "properties": {},
+      "type": "object"
+    }
+  },
+  {
+    "name": "nav_bake",
+    "description": "Bake obstacle rects into a 2D nav grid and route around them.",
+    "input_schema": {
+      "properties": {
+        "rects": {
+          "items": {
+            "items": {
+              "type": "number"
+            },
+            "maxItems": 4,
+            "minItems": 4,
+            "type": "array"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object"
+    }
+  },
+  {
+    "name": "import_gltf",
+    "description": "Import a .gltf/.glb file; return meshes/nodes/materials.",
+    "input_schema": {
+      "properties": {
+        "path": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "path"
+      ],
+      "type": "object"
+    }
+  },
+  {
+    "name": "gd_transpile",
+    "description": "Transpile GDScript source to Iris; return schema + emitted source.",
+    "input_schema": {
+      "properties": {
+        "source": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "source"
+      ],
+      "type": "object"
+    }
+  }
+]

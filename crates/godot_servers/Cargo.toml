@@ -1,0 +1,21 @@
+[package]
+name = "godot_servers"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Godot 4.7 servers/ port: RenderingServer, PhysicsServer2D/3D, AudioServer (software/dummy-first, backend trait for wgpu)"
+
+[dependencies]
+godot_core.workspace = true
+godot_scene.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+wgpu = { version = "30", optional = true }
+pollster = { version = "0.4", optional = true }
+
+[features]
+default = []
+# Real GPU path: offscreen render-to-texture + readback (works headless and
+# feeds the same framebuffers the software path and GUI viewport display).
+wgpu = ["dep:wgpu", "dep:pollster"]

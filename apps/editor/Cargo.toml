@@ -1,0 +1,28 @@
+[package]
+name = "editor"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[[bin]]
+name = "godot_rs_editor"
+path = "src/main.rs"
+
+[dependencies]
+godot_core.workspace = true
+godot_scene.workspace = true
+godot_scene_ext.workspace = true
+godot_script_iris.workspace = true
+godot_servers.workspace = true
+godot_host.workspace = true
+godot_net.workspace = true
+godot_nav.workspace = true
+godot_io.workspace = true
+godot_ai.workspace = true
+tokio.workspace = true
+serde_json.workspace = true
+eframe = { version = "0.36", optional = true, default-features = false, features = ["glow", "default_fonts"] }
+
+[features]
+default = []
+gui = ["eframe"]

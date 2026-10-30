@@ -1,0 +1,13 @@
+[package]
+name = "godot_scene_ext"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Godot 4.7 scene/resources+animation+gui+theme port: Animation, Controls, Theme, Audio players"
+
+[dependencies]
+godot_core.workspace = true
+godot_scene.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true

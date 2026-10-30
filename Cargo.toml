@@ -1,0 +1,26 @@
+[workspace]
+resolver = "2"
+members = ["crates/*", "apps/*"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/yourname/godot_rs"
+rust-version = "1.75"
+
+[workspace.dependencies]
+godot_core = { path = "crates/godot_core" }
+godot_scene = { path = "crates/godot_scene" }
+godot_scene_ext = { path = "crates/godot_scene_ext" }
+godot_script_iris = { path = "crates/godot_script_iris" }
+godot_servers = { path = "crates/godot_servers" }
+godot_host = { path = "crates/godot_host" }
+godot_net = { path = "crates/godot_net" }
+godot_nav = { path = "crates/godot_nav" }
+godot_io = { path = "crates/godot_io" }
+godot_ai = { path = "crates/godot_ai" }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"
+tokio = { version = "1", features = ["full"] }

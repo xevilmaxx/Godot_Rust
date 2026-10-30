@@ -1,0 +1,1221 @@
+{
+  "Animation": {
+    "name": "Animation",
+    "parent": "Node",
+    "properties": [
+      {
+        "name": "visible",
+        "variant_type": "Bool",
+        "hint": "",
+        "default_json": "true"
+      }
+    ],
+    "methods": [
+      {
+        "name": "play",
+        "args": [],
+        "return_type": "Nil",
+        "doc": "Keyframe animation resource.",
+        "is_static": false,
+        "is_const": false
+      }
+    ],
+    "signals": [],
+    "enums": [],
+    "is_singleton": false,
+    "can_instantiate": true,
+    "doc": "Keyframe animation resource."
+  },
+  "AnimationPlayer": {
+    "name": "AnimationPlayer",
+    "parent": "Node",
+    "properties": [
+      {
+        "name": "visible",
+        "variant_type": "Bool",
+        "hint": "",
+        "default_json": "true"
+      }
+    ],
+    "methods": [
+      {
+        "name": "play",
+        "args": [],
+        "return_type": "Nil",
+        "doc": "Plays Animations onto scene properties.",
+        "is_static": false,
+        "is_const": false
+      }
+    ],
+    "signals": [],
+    "enums": [],
+    "is_singleton": false,
+    "can_instantiate": true,
+    "doc": "Plays Animations onto scene properties."
+  },
+  "AudioServer": {
+    "name": "AudioServer",
+    "parent": "Object",
+    "properties": [
+      {
+        "name": "backend",
+        "variant_type": "String",
+        "hint": "",
+        "default_json": "\"software\""
+      }
+    ],
+    "methods": [
+      {
+        "name": "play",
+        "args": [],
+        "return_type": "Nil",
+        "doc": "Starts a player stream.",
+        "is_static": false,
+        "is_const": false
+      },
+      {
+        "name": "render_pcm",
+        "args": [],
+        "return_type": "Nil",
+        "doc": "Mixes players to float samples.",
+        "is_static": false,
+        "is_const": false
+      },
+      {
+        "name": "encode_wav",
+        "args": [],
+        "return_type": "Nil",
+        "doc": "Encodes mixed samples as WAV-16 bytes.",
+        "is_static": false,
+        "is_const": false
+      }
+    ],
+    "signals": [],
+    "enums": [],
+    "is_singleton": true,
+    "can_instantiate": false,
+    "doc": "AudioServer singleton (module 03 port)."
+  },
+  "AudioStreamPlayer": {
+    "name": "AudioStreamPlayer",
+    "parent": "Node",
+    "properties": [
+      {
+        "name": "visible",
+        "variant_type": "Bool",
+        "hint": "",
+        "default_json": "true"
+      }
+    ],
+    "methods": [
+      {
+        "name": "play",
+        "args": [],
+        "return_type": "Nil",
+        "doc": "Non-positional audio playback node.",
+        "is_static": false,
+        "is_const": false
+      }
+    ],
+    "signals": [],
+    "enums": [],
+    "is_singleton": false,
+    "can_instantiate": true,
+    "doc": "Non-positional audio playback node."
+  },
+  "AudioStreamWAV": {
+    "name": "AudioStreamWAV",
+    "parent": "Object",
+    "properties": [
+      {
+        "name": "format",
+        "variant_type": "String",
+        "hint": "",
+        "default_json": "\"json\""
+      }
+    ],
+    "methods": [
+      {
+        "name": "load",
+        "args": [
+          [
+            "path",
+            "String"
+          ]
+        ],
+        "return_type": "Int",
+        "doc": "WAV-16 decode (matches AudioServer encoder).",
+        "is_static": false,
+        "is_const": false
+      }
+    ],
+    "signals": [],
+    "enums": [],
+    "is_singleton": false,
+    "can_instantiate": true,
+    "doc": "WAV-16 decode (matches AudioServer encoder)."
+  },
+  "Button": {
+    "name": "Button",
+    "parent": "Node",
+    "properties": [
+      {
+        "name": "visible",
+        "variant_type": "Bool",
+        "hint": "",
+        "default_json": "true"
+      }
+    ],
+    "methods": [
+      {
+        "name": "play",
+        "args": [],
+        "return_type": "Nil",
+        "doc": "Clickable button with text.",
+        "is_static": false,
+        "is_const": false
+      }
+    ],
+    "signals": [],
+    "enums": [],
+    "is_singleton": false,
+    "can_instantiate": true,
+    "doc": "Clickable button with text."
+  },
+  "Control": {
+    "name": "Control",
+    "parent": "Node",
+    "properties": [
+      {
+        "name": "visible",
+        "variant_type": "Bool",
+        "hint": "",
+        "default_json": "true"
+      }
+    ],
+    "methods": [
+      {
+        "name": "play",
+        "args": [],
+        "return_type": "Nil",
+        "doc": "2D GUI rectangle.",
+        "is_static": false,
+        "is_const": false
+      }
+    ],
+    "signals": [],
+    "enums": [],
+    "is_singleton": false,
+    "can_instantiate": true,
+    "doc": "2D GUI rectangle."
+  },
+  "DisplayServer": {
+    "name": "DisplayServer",
+    "parent": "Object",
+    "properties": [
+      {
+        "name": "headless",
+        "variant_type": "Bool",
+        "hint": "",
+        "default_json": "true"
+      }
+    ],
+    "methods": [
+      {
+        "name": "get_ticks_msec",
+        "args": [],
+        "return_type": "Int",
+        "doc": "Milliseconds since engine start.",
+        "is_static": false,
+        "is_const": true
+      }
+    ],
+    "signals": [],
+    "enums": [],
+    "is_singleton": true,
+    "can_instantiate": false,
+    "doc": "DisplayServer singleton (module 04 port)."
+  },
+  "Engine": {
+    "name": "Engine",
+    "parent": "Object",
+    "properties": [
+      {
+        "name": "headless",
+        "variant_type": "Bool",
+        "hint": "",
+        "default_json": "true"
+      }
+    ],
+    "methods": [
+      {
+        "name": "get_ticks_msec",
+        "args": [],
+        "return_type": "Int",
+        "doc": "Milliseconds since engine start.",
+        "is_static": false,
+        "is_const": true
+      }
+    ],
+    "signals": [],
+    "enums": [],
+    "is_singleton": true,
+    "can_instantiate": false,
+    "doc": "Engine singleton (module 04 port)."
+  },
+  "GLTFDocument": {
+    "name": "GLTFDocument",
+    "parent": "Object",
+    "properties": [
+      {
+        "name": "format",
+        "variant_type": "String",
+        "hint": "",
+        "default_json": "\"json\""
+      }
+    ],
+    "methods": [
+      {
+        "name": "load",
+        "args": [
+          [
+            "path",
+            "String"
+          ]
+        ],
+        "return_type": "Int",
+        "doc": "glTF2 JSON import (POSITION + materials).",
+        "is_static": false,
+        "is_const": false
+      }
+    ],
+    "signals": [],
+    "enums": [],
+    "is_singleton": false,
+    "can_instantiate": true,
+    "doc": "glTF2 JSON import (POSITION + materials)."
+  },
+  "Input": {
+    "name": "Input",
+    "parent": "Object",
+    "properties": [
+      {
+        "name": "headless",
+        "variant_type": "Bool",
+        "hint": "",
+        "default_json": "true"
+      }
+    ],
+    "methods": [
+      {
+        "name": "get_ticks_msec",
+        "args": [],
+        "return_type": "Int",
+        "doc": "Milliseconds since engine start.",
+        "is_static": false,
+        "is_const": true
+      }
+    ],
+    "signals": [],
+    "enums": [],
+    "is_singleton": true,
+    "can_instantiate": false,
+    "doc": "Input singleton (module 04 port)."
+  },
+  "Label": {
+    "name": "Label",
+    "parent": "Node",
+    "properties": [
+      {
+        "name": "visible",
+        "variant_type": "Bool",
+        "hint": "",
+        "default_json": "true"
+      }
+    ],
+    "methods": [
+      {
+        "name": "play",
+        "args": [],
+        "return_type": "Nil",
+        "doc": "Text label.",
+        "is_static": false,
+        "is_const": false
+      }
+    ],
+    "signals": [],
+    "enums": [],
+    "is_singleton": false,
+    "can_instantiate": true,
+    "doc": "Text label."
+  },
+  "LineEdit": {
+    "name": "LineEdit",
+    "parent": "Node",
+    "properties": [
+      {
+        "name": "visible",
+        "variant_type": "Bool",
+        "hint": "",
+        "default_json": "true"
+      }
+    ],
+    "methods": [
+      {
+        "name": "play",
+        "args": [],
+        "return_type": "Nil",
+        "doc": "Single-line text input.",
+        "is_static": false,
+        "is_const": false
+      }
+    ],
+    "signals": [],
+    "enums": [],
+    "is_singleton": false,
+    "can_instantiate": true,
+    "doc": "Single-line text input."
+  },
+  "MultiplayerAPI": {
+    "name": "MultiplayerAPI",
+    "parent": "Object",
+    "properties": [
+      {
+        "name": "connected",
+        "variant_type": "Bool",
+        "hint": "",
+        "default_json": "false"
+      }
+    ],
+    "methods": [
+      {
+        "name": "rpc",
+        "args": [
+          [
+            "method",
+            "String"
+          ]
+        ],
+        "return_type": "Nil",
+        "doc": "RPC + replication dispatcher.",
+        "is_static": false,
+        "is_const": false
+      }
+    ],
+    "signals": [],
+    "enums": [],
+    "is_singleton": false,
+    "can_instantiate": true,
+    "doc": "RPC + replication dispatcher."
+  },
+  "NavigationServer2D": {
+    "name": "NavigationServer2D",
+    "parent": "Object",
+    "properties": [
+      {
+        "name": "active",
+        "variant_type": "Bool",
+        "hint": "",
+        "default_json": "true"
+      }
+    ],
+    "methods": [
+      {
+        "name": "map_get_path",
+        "args": [
+          [
+            "from",
+            "Vector3"
+          ],
+          [
+            "to",
+            "Vector3"
+          ]
+        ],
+        "return_type": "PackedVector3Array",
+        "doc": "2D grid pathfinding (A*).",
+        "is_static": false,
+        "is_const": true
+      }
+    ],
+    "signals": [],
+    "enums": [],
+    "is_singleton": true,
+    "can_instantiate": false,
+    "doc": "2D grid pathfinding (A*)."
+  },
+  "NavigationServer3D": {
+    "name": "NavigationServer3D",
+    "parent": "Object",
+    "properties": [
+      {
+        "name": "active",
+        "variant_type": "Bool",
+        "hint": "",
+        "default_json": "true"
+      }
+    ],
+    "methods": [
+      {
+        "name": "map_get_path",
+        "args": [
+          [
+            "from",
+            "Vector3"
+          ],
+          [
+            "to",
+            "Vector3"
+          ]
+        ],
+        "return_type": "PackedVector3Array",
+        "doc": "3D waypoint-graph pathfinding (A*).",
+        "is_static": false,
+        "is_const": true
+      }
+    ],
+    "signals": [],
+    "enums": [],
+    "is_singleton": true,
+    "can_instantiate": false,
+    "doc": "3D waypoint-graph pathfinding (A*)."
+  },
+  "Node": {
+    "name": "Node",
+    "parent": "Object",
+    "properties": [
+      {
+        "name": "name",
+        "variant_type": "String",
+        "hint": "",
+        "default_json": "\"Node\""
+      },
+      {
+        "name": "unique_name_in_owner",
+        "variant_type": "Bool",
+        "hint": "",
+        "default_json": "false"
+      }
+    ],
+    "methods": [
+      {
+        "name": "add_child",
+        "args": [
+          [
+            "node",
+            "Object"
+          ]
+        ],
+        "return_type": "Nil",
+        "doc": "Adds a child node.",
+        "is_static": false,
+        "is_const": false
+      },
+      {
+        "name": "get_node",
+        "args": [
+          [
+            "path",
+            "NodePath"
+          ]
+        ],
+        "return_type": "Object",
+        "doc": "Fetches a node by path.",
+        "is_static": false,
+        "is_const": true
+      },
+      {
+        "name": "queue_free",
+        "args": [],
+        "return_type": "Nil",
+        "doc": "Deletes the node at frame end.",
+        "is_static": false,
+        "is_const": false
+      }
+    ],
+    "signals": [
+      {
+        "name": "ready",
+        "args": [],
+        "doc": "Emitted when the node is ready."
+      },
+      {
+        "name": "renamed",
+        "args": [],
+        "doc": "Emitted when renamed."
+      },
+      {
+        "name": "child_entered_tree",
+        "args": [
+          [
+            "node",
+            "Object"
+          ]
+        ],
+        "doc": "A child entered the tree."
+      }
+    ],
+    "enums": [],
+    "is_singleton": false,
+    "can_instantiate": true,
+    "doc": "Base scene-tree node."
+  },
+  "Node2D": {
+    "name": "Node2D",
+    "parent": "Node",
+    "properties": [
+      {
+        "name": "position",
+        "variant_type": "Vector2",
+        "hint": "",
+        "default_json": "[0,0]"
+      },
+      {
+        "name": "rotation",
+        "variant_type": "Float",
+        "hint": "",
+        "default_json": "0.0"
+      },
+      {
+        "name": "scale",
+        "variant_type": "Vector2",
+        "hint": "",
+        "default_json": "[1,1]"
+      }
+    ],
+    "methods": [],
+    "signals": [],
+    "enums": [],
+    "is_singleton": false,
+    "can_instantiate": true,
+    "doc": "2D game object."
+  },
+  "Node3D": {
+    "name": "Node3D",
+    "parent": "Node",
+    "properties": [
+      {
+        "name": "position",
+        "variant_type": "Vector3",
+        "hint": "",
+        "default_json": "[0,0,0]"
+      },
+      {
+        "name": "rotation",
+        "variant_type": "Vector3",
+        "hint": "",
+        "default_json": "[0,0,0]"
+      },
+      {
+        "name": "scale",
+        "variant_type": "Vector3",
+        "hint": "",
+        "default_json": "[1,1,1]"
+      }
+    ],
+    "methods": [
+      {
+        "name": "look_at",
+        "args": [
+          [
+            "target",
+            "Vector3"
+          ]
+        ],
+        "return_type": "Nil",
+        "doc": "Rotates to face a target.",
+        "is_static": false,
+        "is_const": false
+      }
+    ],
+    "signals": [],
+    "enums": [],
+    "is_singleton": false,
+    "can_instantiate": true,
+    "doc": "3D game object."
+  },
+  "OS": {
+    "name": "OS",
+    "parent": "Object",
+    "properties": [
+      {
+        "name": "headless",
+        "variant_type": "Bool",
+        "hint": "",
+        "default_json": "true"
+      }
+    ],
+    "methods": [
+      {
+        "name": "get_ticks_msec",
+        "args": [],
+        "return_type": "Int",
+        "doc": "Milliseconds since engine start.",
+        "is_static": false,
+        "is_const": true
+      }
+    ],
+    "signals": [],
+    "enums": [],
+    "is_singleton": true,
+    "can_instantiate": false,
+    "doc": "OS singleton (module 04 port)."
+  },
+  "Object": {
+    "name": "Object",
+    "parent": null,
+    "properties": [],
+    "methods": [
+      {
+        "name": "_init",
+        "args": [],
+        "return_type": "Nil",
+        "doc": "Called when the object is created.",
+        "is_static": false,
+        "is_const": false
+      },
+      {
+        "name": "get_class",
+        "args": [],
+        "return_type": "String",
+        "doc": "Returns the runtime class name.",
+        "is_static": false,
+        "is_const": true
+      },
+      {
+        "name": "is_class",
+        "args": [
+          [
+            "class",
+            "String"
+          ]
+        ],
+        "return_type": "Bool",
+        "doc": "Returns true if this object is of the given class or a subclass.",
+        "is_static": false,
+        "is_const": true
+      },
+      {
+        "name": "set",
+        "args": [
+          [
+            "property",
+            "String"
+          ],
+          [
+            "value",
+            "Nil"
+          ]
+        ],
+        "return_type": "Nil",
+        "doc": "Sets a property by name.",
+        "is_static": false,
+        "is_const": false
+      },
+      {
+        "name": "get",
+        "args": [
+          [
+            "property",
+            "String"
+          ]
+        ],
+        "return_type": "Nil",
+        "doc": "Gets a property by name.",
+        "is_static": false,
+        "is_const": true
+      },
+      {
+        "name": "connect",
+        "args": [
+          [
+            "signal",
+            "Signal"
+          ],
+          [
+            "callable",
+            "Callable"
+          ]
+        ],
+        "return_type": "Int",
+        "doc": "Connects a signal to a callable. Returns OK.",
+        "is_static": false,
+        "is_const": false
+      },
+      {
+        "name": "emit_signal",
+        "args": [
+          [
+            "signal",
+            "Signal"
+          ]
+        ],
+        "return_type": "Nil",
+        "doc": "Emits a signal.",
+        "is_static": false,
+        "is_const": false
+      },
+      {
+        "name": "add_to_group",
+        "args": [
+          [
+            "group",
+            "String"
+          ]
+        ],
+        "return_type": "Nil",
+        "doc": "Adds this object to a group.",
+        "is_static": false,
+        "is_const": false
+      }
+    ],
+    "signals": [
+      {
+        "name": "script_changed",
+        "args": [],
+        "doc": "Emitted when the script changes."
+      }
+    ],
+    "enums": [
+      {
+        "name": "ConnectFlags",
+        "values": [
+          [
+            "CONNECT_DEFERRED",
+            1
+          ],
+          [
+            "CONNECT_PERSIST",
+            2
+          ],
+          [
+            "CONNECT_ONE_SHOT",
+            4
+          ],
+          [
+            "CONNECT_REFERENCE_COUNTED",
+            8
+          ]
+        ]
+      }
+    ],
+    "is_singleton": false,
+    "can_instantiate": true,
+    "doc": "Base class of all objects."
+  },
+  "PhysicsServer2D": {
+    "name": "PhysicsServer2D",
+    "parent": "Object",
+    "properties": [
+      {
+        "name": "backend",
+        "variant_type": "String",
+        "hint": "",
+        "default_json": "\"software\""
+      }
+    ],
+    "methods": [
+      {
+        "name": "space_create",
+        "args": [],
+        "return_type": "Nil",
+        "doc": "Creates a 2D physics space.",
+        "is_static": false,
+        "is_const": false
+      },
+      {
+        "name": "body_create",
+        "args": [],
+        "return_type": "Nil",
+        "doc": "Creates a 2D physics body.",
+        "is_static": false,
+        "is_const": false
+      },
+      {
+        "name": "space_step",
+        "args": [],
+        "return_type": "Nil",
+        "doc": "Fixed-step 2D simulation tick.",
+        "is_static": false,
+        "is_const": false
+      }
+    ],
+    "signals": [],
+    "enums": [],
+    "is_singleton": true,
+    "can_instantiate": false,
+    "doc": "PhysicsServer2D singleton (module 03 port)."
+  },
+  "PhysicsServer3D": {
+    "name": "PhysicsServer3D",
+    "parent": "Object",
+    "properties": [
+      {
+        "name": "backend",
+        "variant_type": "String",
+        "hint": "",
+        "default_json": "\"software\""
+      }
+    ],
+    "methods": [
+      {
+        "name": "space_create",
+        "args": [],
+        "return_type": "Nil",
+        "doc": "Creates a physics space.",
+        "is_static": false,
+        "is_const": false
+      },
+      {
+        "name": "body_create",
+        "args": [],
+        "return_type": "Nil",
+        "doc": "Creates a physics body.",
+        "is_static": false,
+        "is_const": false
+      },
+      {
+        "name": "space_step",
+        "args": [],
+        "return_type": "Nil",
+        "doc": "Fixed-step simulation tick.",
+        "is_static": false,
+        "is_const": false
+      },
+      {
+        "name": "ray_cast",
+        "args": [],
+        "return_type": "Nil",
+        "doc": "Closest-hit ray query.",
+        "is_static": false,
+        "is_const": false
+      }
+    ],
+    "signals": [],
+    "enums": [],
+    "is_singleton": true,
+    "can_instantiate": false,
+    "doc": "PhysicsServer3D singleton (module 03 port)."
+  },
+  "ProjectSettings": {
+    "name": "ProjectSettings",
+    "parent": "Object",
+    "properties": [
+      {
+        "name": "headless",
+        "variant_type": "Bool",
+        "hint": "",
+        "default_json": "true"
+      }
+    ],
+    "methods": [
+      {
+        "name": "get_ticks_msec",
+        "args": [],
+        "return_type": "Int",
+        "doc": "Milliseconds since engine start.",
+        "is_static": false,
+        "is_const": true
+      }
+    ],
+    "signals": [],
+    "enums": [],
+    "is_singleton": true,
+    "can_instantiate": false,
+    "doc": "ProjectSettings singleton (module 04 port)."
+  },
+  "RefCounted": {
+    "name": "RefCounted",
+    "parent": "Object",
+    "properties": [],
+    "methods": [
+      {
+        "name": "reference",
+        "args": [],
+        "return_type": "Bool",
+        "doc": "Adds a reference.",
+        "is_static": false,
+        "is_const": false
+      },
+      {
+        "name": "unreference",
+        "args": [],
+        "return_type": "Bool",
+        "doc": "Removes a reference. Deletes when zero.",
+        "is_static": false,
+        "is_const": false
+      },
+      {
+        "name": "get_reference_count",
+        "args": [],
+        "return_type": "Int",
+        "doc": "Current reference count.",
+        "is_static": false,
+        "is_const": true
+      }
+    ],
+    "signals": [],
+    "enums": [],
+    "is_singleton": false,
+    "can_instantiate": true,
+    "doc": "Reference-counted object."
+  },
+  "RenderingServer": {
+    "name": "RenderingServer",
+    "parent": "Object",
+    "properties": [
+      {
+        "name": "backend",
+        "variant_type": "String",
+        "hint": "",
+        "default_json": "\"software\""
+      }
+    ],
+    "methods": [
+      {
+        "name": "texture_create",
+        "args": [],
+        "return_type": "Nil",
+        "doc": "Creates a texture resource.",
+        "is_static": false,
+        "is_const": false
+      },
+      {
+        "name": "mesh_create",
+        "args": [],
+        "return_type": "Nil",
+        "doc": "Creates a mesh resource.",
+        "is_static": false,
+        "is_const": false
+      },
+      {
+        "name": "instance_create",
+        "args": [],
+        "return_type": "Nil",
+        "doc": "Creates a render instance.",
+        "is_static": false,
+        "is_const": false
+      },
+      {
+        "name": "render",
+        "args": [],
+        "return_type": "Nil",
+        "doc": "Renders all viewports (software path).",
+        "is_static": false,
+        "is_const": false
+      }
+    ],
+    "signals": [],
+    "enums": [],
+    "is_singleton": true,
+    "can_instantiate": false,
+    "doc": "RenderingServer singleton (module 03 port)."
+  },
+  "SceneTree": {
+    "name": "SceneTree",
+    "parent": "Object",
+    "properties": [
+      {
+        "name": "paused",
+        "variant_type": "Bool",
+        "hint": "",
+        "default_json": "false"
+      },
+      {
+        "name": "time_scale",
+        "variant_type": "Float",
+        "hint": "",
+        "default_json": "1.0"
+      }
+    ],
+    "methods": [
+      {
+        "name": "create_timer",
+        "args": [
+          [
+            "wait",
+            "Float"
+          ]
+        ],
+        "return_type": "Object",
+        "doc": "Creates a one-shot timer.",
+        "is_static": false,
+        "is_const": false
+      },
+      {
+        "name": "get_nodes_in_group",
+        "args": [
+          [
+            "group",
+            "String"
+          ]
+        ],
+        "return_type": "Array",
+        "doc": "Returns nodes in a group.",
+        "is_static": false,
+        "is_const": true
+      }
+    ],
+    "signals": [
+      {
+        "name": "process_frame",
+        "args": [],
+        "doc": "Emitted every idle frame."
+      }
+    ],
+    "enums": [],
+    "is_singleton": false,
+    "can_instantiate": false,
+    "doc": "Main loop + scene registry."
+  },
+  "TextServer": {
+    "name": "TextServer",
+    "parent": "Object",
+    "properties": [
+      {
+        "name": "format",
+        "variant_type": "String",
+        "hint": "",
+        "default_json": "\"json\""
+      }
+    ],
+    "methods": [
+      {
+        "name": "load",
+        "args": [
+          [
+            "path",
+            "String"
+          ]
+        ],
+        "return_type": "Int",
+        "doc": "Font shaping/measuring stub (monospace).",
+        "is_static": false,
+        "is_const": false
+      }
+    ],
+    "signals": [],
+    "enums": [],
+    "is_singleton": false,
+    "can_instantiate": true,
+    "doc": "Font shaping/measuring stub (monospace)."
+  },
+  "Theme": {
+    "name": "Theme",
+    "parent": "Node",
+    "properties": [
+      {
+        "name": "visible",
+        "variant_type": "Bool",
+        "hint": "",
+        "default_json": "true"
+      }
+    ],
+    "methods": [
+      {
+        "name": "play",
+        "args": [],
+        "return_type": "Nil",
+        "doc": "GUI theme items.",
+        "is_static": false,
+        "is_const": false
+      }
+    ],
+    "signals": [],
+    "enums": [],
+    "is_singleton": false,
+    "can_instantiate": true,
+    "doc": "GUI theme items."
+  },
+  "Time": {
+    "name": "Time",
+    "parent": "Object",
+    "properties": [
+      {
+        "name": "headless",
+        "variant_type": "Bool",
+        "hint": "",
+        "default_json": "true"
+      }
+    ],
+    "methods": [
+      {
+        "name": "get_ticks_msec",
+        "args": [],
+        "return_type": "Int",
+        "doc": "Milliseconds since engine start.",
+        "is_static": false,
+        "is_const": true
+      }
+    ],
+    "signals": [],
+    "enums": [],
+    "is_singleton": true,
+    "can_instantiate": false,
+    "doc": "Time singleton (module 04 port)."
+  },
+  "UPNP": {
+    "name": "UPNP",
+    "parent": "Object",
+    "properties": [
+      {
+        "name": "connected",
+        "variant_type": "Bool",
+        "hint": "",
+        "default_json": "false"
+      }
+    ],
+    "methods": [
+      {
+        "name": "rpc",
+        "args": [
+          [
+            "method",
+            "String"
+          ]
+        ],
+        "return_type": "Nil",
+        "doc": "Gateway discovery (stub reports no devices headless).",
+        "is_static": false,
+        "is_const": false
+      }
+    ],
+    "signals": [],
+    "enums": [],
+    "is_singleton": false,
+    "can_instantiate": true,
+    "doc": "Gateway discovery (stub reports no devices headless)."
+  },
+  "WebSocketPeer": {
+    "name": "WebSocketPeer",
+    "parent": "Object",
+    "properties": [
+      {
+        "name": "connected",
+        "variant_type": "Bool",
+        "hint": "",
+        "default_json": "false"
+      }
+    ],
+    "methods": [
+      {
+        "name": "rpc",
+        "args": [
+          [
+            "method",
+            "String"
+          ]
+        ],
+        "return_type": "Nil",
+        "doc": "Message channel (loopback/TCP).",
+        "is_static": false,
+        "is_const": false
+      }
+    ],
+    "signals": [],
+    "enums": [],
+    "is_singleton": false,
+    "can_instantiate": true,
+    "doc": "Message channel (loopback/TCP)."
+  }
+}
